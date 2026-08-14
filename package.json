@@ -2,6 +2,6 @@
   "name": "cpg-gerador-de-criativos",
   "private": true,
   "scripts": {
-    "start": "node server.js"
+    "start": "node local-server.js"
   }
 }
