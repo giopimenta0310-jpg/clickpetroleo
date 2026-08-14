@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>CPG — Gerador de Criativos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" rel="stylesheet">
+  <style>
+    :root{--red:#e52b2d;--bg:#0a0a0b;--panel:#161618;--field:#202023;--line:#323237;--text:#f7f7f7;--muted:#a7a7ad}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:"DM Sans",sans-serif}header{padding:20px 28px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:15px}header h1{margin:0;font-size:18px}header p{margin:3px 0 0;color:var(--muted);font-size:13px}.brand{font-weight:700;font-size:22px;letter-spacing:-1px}.brand i{font-style:normal;color:var(--red)}main{max-width:1280px;margin:auto;padding:28px;display:grid;grid-template-columns:minmax(360px,1fr) 390px;gap:32px}.preview{position:sticky;top:25px}.frame{display:flex;justify-content:center;align-items:center;background:#111;border:1px solid var(--line);border-radius:14px;padding:16px;min-height:650px}canvas{width:min(100%,540px);height:auto;display:block;background:#000;box-shadow:0 15px 45px #0008}.note{font-size:12px;color:var(--muted);margin:10px 0 0;text-align:center}.panel{padding:18px;background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-bottom:15px}.panel h2{margin:0 0 13px;font-size:13px;text-transform:uppercase;letter-spacing:1px}.templates{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.templates button,.button{font:inherit;color:var(--text);cursor:pointer;border:1px solid var(--line);background:var(--field);border-radius:9px;padding:11px}.templates button{font-size:12px;min-height:63px}.templates button.active{border-color:var(--red);box-shadow:inset 0 0 0 1px var(--red);color:#fff}.button.primary{background:var(--red);border-color:var(--red);font-weight:700;width:100%;font-size:15px}.button.secondary{width:100%;margin-top:9px}label{display:block;color:var(--muted);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin:13px 0 6px}input,textarea,select{width:100%;font:inherit;color:var(--text);background:var(--field);border:1px solid var(--line);border-radius:8px;padding:10px}textarea{min-height:74px;resize:vertical}.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.status{min-height:18px;color:var(--muted);font-size:12px;margin-top:9px}.status.err{color:#ff8c8c}.status.ok{color:#8ce3a0}.hint{font-size:12px;line-height:1.45;color:var(--muted);margin:9px 0 0}@media(max-width:900px){main{grid-template-columns:1fr}.preview{position:static}.frame{min-height:0}}
+  </style>
+</head>
+<body>
+  <header><div class="brand">CPG<i>◆</i></div><div><h1>Gerador de criativos</h1><p>Click Petróleo e Gás · Feed e Stories</p></div></header>
+  <main>
+    <section class="preview"><div class="frame"><canvas id="canvas" width="1080" height="1350"></canvas></div><p class="note" id="dimensions">Feed · 1080 × 1350</p></section>
+    <aside>
+      <section class="panel"><h2>Modelo</h2><div class="templates"><button data-template="article" class="active">Matéria<br>em destaque</button><button data-template="weekly">Resumo<br>semanal</button><button data-template="institutional">Institucional</button></div><label for="format">Formato</label><select id="format"><option value="feed">Feed — 1080 × 1350</option><option value="story">Stories — 1080 × 1920</option></select></section>
+      <section class="panel" id="linkPanel"><h2>Matéria</h2><label for="url">Link da matéria</label><input id="url" type="url" placeholder="https://…"><button class="button secondary" id="loadUrl">Carregar matéria</button><p class="hint">Ao publicar, o gerador busca título e imagem Open Graph. Se a fonte bloquear o acesso, você pode completar abaixo.</p></section>
+      <section class="panel" id="articleFields"><h2>Conteúdo</h2><label for="articleTitle">Título da matéria</label><textarea id="articleTitle">Navio-hospital promete mais de 40 mil atendimentos por ano na Amazônia</textarea><label for="imageUrl">URL da imagem</label><input id="imageUrl" type="url" placeholder="https://…"><label for="imageUpload">Ou envie uma imagem</label><input id="imageUpload" type="file" accept="image/*"></section>
+      <section class="panel" id="weeklyFields" hidden><h2>Destaques da semana</h2><label for="weekly1">Destaque 1</label><input id="weekly1" value="Navio-hospital na Amazônia"><label for="weekly2">Destaque 2</label><input id="weekly2" value="Ponte mais larga do mundo construída na China"><label for="weekly3">Destaque 3</label><input id="weekly3" value="Carregar o celular com capinha pode afetar a bateria?"></section>
+      <section class="panel"><h2>Chamada e CTA</h2><label for="eyebrow">Chamada superior</label><input id="eyebrow" value="A notícia que todo mundo comentou essa semana"><label for="cta">Botão</label><input id="cta" value="Quero receber por e-mail"></section>
+      <section class="panel"><h2>Exportar</h2><button class="button primary" id="exportOne">Baixar PNG</button><button class="button secondary" id="exportBoth">Baixar Feed e Stories</button><div class="status" id="status"></div></section>
+    </aside>
+  </main>
+  <script>
+  const $=id=>document.getElementById(id), C=$("canvas"), ctx=C.getContext("2d");
+  const state={template:"article",format:"feed",image:null}; const RED="#e52b2d", WHITE="#f7f7f7";
+  const brandLogo = new Image();
+  brandLogo.src = "assets/logo-click-petroleo-e-gas.webp";
+  brandLogo.onload = () => draw();
+  const fields=["articleTitle","imageUrl","weekly1","weekly2","weekly3","eyebrow","cta"];
+  fields.forEach(id=>$(id).addEventListener("input",draw));
+  function status(message,type=""){ $("status").textContent=message; $("status").className="status "+type; }
+  function isStory(){return state.format==="story"} function scale(){return C.width/1080}
+  function font(weight,size){ctx.font=`${weight} ${size*scale()}px "DM Sans",Arial,sans-serif`}
+  function wrap(text,maxWidth){const words=(text||"").split(/\s+/), lines=[];let line="";for(const word of words){const next=line?line+" "+word:word;if(ctx.measureText(next).width>maxWidth&&line){lines.push(line);line=word}else line=next}if(line)lines.push(line);return lines}
+  function textBlock(text,x,y,maxW,size,leading,color,weight="700",maxLines=5){font(weight,size);ctx.fillStyle=color;ctx.textAlign="left";let lines=wrap(text,maxW);if(lines.length>maxLines){lines=lines.slice(0,maxLines);lines[maxLines-1]=lines[maxLines-1].replace(/\s+\S*$/,"")+"…"}lines.forEach((line,i)=>ctx.fillText(line,x,y+i*leading*scale()));return y+lines.length*leading*scale()}
+  function logo(x,y,w=330){
+    const s=scale(), width=w*s, height=width*(brandLogo.naturalHeight/brandLogo.naturalWidth || .55);
+    if(brandLogo.complete && brandLogo.naturalWidth) ctx.drawImage(brandLogo,x,y,width,height);
+    else { ctx.fillStyle=WHITE; font("700",76); ctx.fillText("CPG",x,y+75*s); }
+    return height;
+  }
+  function rounded(x,y,w,h,r){ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fill()}
+  function drawImage(x,y,w,h){if(!state.image)return;const im=state.image,ratio=Math.max(w/im.width,h/im.height), iw=im.width*ratio,ih=im.height*ratio;ctx.save();ctx.beginPath();ctx.roundRect(x,y,w,h,28*scale());ctx.clip();ctx.drawImage(im,x+(w-iw)/2,y+(h-ih)/2,iw,ih);const g=ctx.createLinearGradient(0,y,0,y+h);g.addColorStop(.4,"rgba(0,0,0,0)");g.addColorStop(1,"rgba(0,0,0,.9)");ctx.fillStyle=g;ctx.fillRect(x,y,w,h);ctx.restore()}
+  function button(label,y){const s=scale(), m=86*s,w=C.width-m*2,h=106*s;ctx.fillStyle=RED;rounded(m,y,w,h,28*s);ctx.fillStyle=WHITE;ctx.textAlign="center";font("700",43);ctx.fillText(label,C.width/2,y+67*s)}
+  function drawArticle(){
+    const s=scale(),m=86*s,story=isStory();
+    // Ritmo vertical: logo → chamada → imagem → título → CTA.
+    // As posições são fixas para que o título nunca concorra com a foto ou com o botão.
+    const logoY=story?260*s:80*s;
+    logo(m,logoY,story?370:320);
+    const eyebrowY=story?620*s:330*s;
+    textBlock($("eyebrow").value,m,eyebrowY,C.width-m*2,story?37:34,45,RED,"700",2);
+    const imageY=story?780*s:455*s, imageH=story?540*s:400*s;
+    drawImage(m,imageY,C.width-m*2,imageH);
+    const titleY=imageY+imageH+(story?80:76)*s;
+    textBlock($("articleTitle").value,m,titleY,C.width-m*2,story?56:52,story?64:60,WHITE,"700",story?3:2);
+    button($("cta").value,story?1695*s:1130*s);
+  }
+  function drawWeekly(){const s=scale(),m=86*s,story=isStory(),base=story?260*s:80*s;logo(m,base,story?370:320);textBlock("As notícias da semana, reunidas",m,base+(230*s),C.width-m*2,37,45,RED,"700",2);const y=base+305*s,h=story?590*s:550*s;ctx.fillStyle="#241010";ctx.fillRect(m,y,C.width-m*2,h);let p=y+70*s;["weekly1","weekly2","weekly3"].forEach(id=>{ctx.fillStyle=RED;ctx.fillRect(m+60*s,p-40*s,5*s,70*s);font("700",28);ctx.fillStyle=RED;ctx.fillText("DESTAQUE",m+88*s,p-12*s);p=textBlock($(id).value,m+88*s,p+30*s,C.width-m-130*s,story?39:37,45,WHITE,"700",2)+55*s});const phrase=story?"A semana resumida no seu e-mail.":"O que aconteceu de mais importante, selecionado e direto no seu e-mail.";textBlock(phrase,m,y+h+85*s,C.width-m*2,story?54:43,54,WHITE,"700",3);button($("cta").value,story?1590*s:1130*s)}
+  function drawInstitutional(){const s=scale(),m=86*s,story=isStory(),base=story?260*s:80*s;logo(m,base,story?370:320);const upper=$("eyebrow").value||"Fique por dentro";textBlock(upper,m,base+235*s,C.width-m*2,37,45,RED,"700",2);textBlock("As notícias que estão movimentando o Brasil, no seu e-mail.",m,base+345*s,C.width-m*2,story?72:64,78,WHITE,"700",4);const y=story?1360*s:945*s;["Última hora","Em destaque","Mais lidas"].forEach((t,i)=>{const x=m+i*(C.width-m*2)/3;ctx.strokeStyle="#aaa";ctx.lineWidth=1*s;ctx.strokeRect(x,y,(C.width-m*2)/3-12*s,70*s);font("400",23);ctx.fillStyle="#aaa";ctx.fillText(t,x+24*s,y+45*s)});button($("cta").value,story?1590*s:1130*s)}
+  function draw(){C.width=1080;C.height=isStory()?1920:1350;ctx.fillStyle="#090909";ctx.fillRect(0,0,C.width,C.height);if(state.template==="article")drawArticle();else if(state.template==="weekly")drawWeekly();else drawInstitutional();$("dimensions").textContent=(isStory()?"Stories · 1080 × 1920":"Feed · 1080 × 1350")}
+  function setImage(src){const im=new Image();im.crossOrigin="anonymous";im.onload=()=>{state.image=im;draw();status("Imagem carregada.","ok")};im.onerror=()=>status("Não consegui usar esta imagem. Envie o arquivo manualmente.","err");im.src=src}
+  $("imageUrl").addEventListener("change",e=>e.target.value&&setImage(e.target.value));$("imageUpload").addEventListener("change",e=>{const f=e.target.files[0];if(f)setImage(URL.createObjectURL(f))});
+  document.querySelectorAll("[data-template]").forEach(b=>b.onclick=()=>{state.template=b.dataset.template;document.querySelectorAll("[data-template]").forEach(x=>x.classList.toggle("active",x===b));$("linkPanel").hidden=state.template!=="article";$("articleFields").hidden=state.template!=="article";$("weeklyFields").hidden=state.template!=="weekly";draw()});
+  $("format").onchange=e=>{state.format=e.target.value;draw()};
+  $("loadUrl").onclick=async()=>{const url=$("url").value.trim();if(!url)return status("Cole o link da matéria primeiro.","err");status("Buscando título e imagem…");try{const r=await fetch("/api/preview?url="+encodeURIComponent(url));if(!r.ok)throw Error();const d=await r.json();if(d.title)$("articleTitle").value=d.title;if(d.image){$("imageUrl").value=d.image;setImage(d.image)}draw();status("Matéria carregada.","ok")}catch{status("Não foi possível ler este link. Preencha o título e envie a imagem.","err")}};
+  function download(name){C.toBlob(b=>{const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)},"image/png")};
+  $("exportOne").onclick=()=>{draw();download(`cpg-${state.template}-${state.format}.png`);status("PNG baixado.","ok")};$("exportBoth").onclick=()=>{state.format="feed";$("format").value="feed";draw();download(`cpg-${state.template}-feed.png`);setTimeout(()=>{state.format="story";$("format").value="story";draw();download(`cpg-${state.template}-stories.png`);status("Feed e Stories baixados.","ok")},600)};document.fonts.ready.then(draw);
+  </script>
+</body></html>
