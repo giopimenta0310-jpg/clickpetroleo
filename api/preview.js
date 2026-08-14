@@ -5,15 +5,27 @@ module.exports = async (req, res) => {
   try {
     const target = new URL(url);
     if (!/^https?:$/.test(target.protocol)) throw new Error('protocolo inválido');
-    const response = await fetch(target, {headers: {'user-agent': 'Mozilla/5.0 CPG Creative Generator'}});
-    if (!response.ok) throw new Error('fonte indisponível');
-    const html = await response.text();
+    let html;
+    let fallbackTitle = '';
+    try {
+      const response = await fetch(target, {headers: {'user-agent': 'Mozilla/5.0 CPG Creative Generator'}});
+      if (!response.ok) throw new Error('fonte indisponível');
+      html = await response.text();
+    } catch {
+      // Alguns sites bloqueiam IPs de servidores. O leitor preserva o título,
+      // mas não fornece uma URL de imagem reutilizável.
+      const reader = await fetch(`https://r.jina.ai/http://${target.href.replace(/^https?:\/\//, '')}`);
+      if (!reader.ok) throw new Error('fonte indisponível');
+      const content = await reader.text();
+      fallbackTitle = (content.match(/^Title:\s*(.+)$/m) || [])[1] || '';
+      html = '';
+    }
     const meta = key => { const re = new RegExp(`<meta[^>]+(?:property|name)=["']${key}["'][^>]+content=["']([^"']+)["']|<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["']${key}["']`, 'i'); const m=html.match(re); return m && (m[1]||m[2]); };
     const image = meta('og:image');
     res.setHeader('Cache-Control', 's-maxage=3600');
     const sourceImage = image ? new URL(image, target).href : '';
     res.status(200).json({
-      title: meta('og:title') || meta('twitter:title') || '',
+      title: meta('og:title') || meta('twitter:title') || fallbackTitle,
       // A imagem passa pelo proxy para preservar CORS e permitir exportar o canvas.
       image: sourceImage ? `/api/image?url=${encodeURIComponent(sourceImage)}` : ''
     });
