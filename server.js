@@ -5,12 +5,13 @@ const path = require('path');
 const mime = {'.html':'text/html; charset=utf-8','.js':'application/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.webp':'image/webp','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg'};
 
 module.exports = (req, res) => {
-  const requestPath = new URL(req.url, 'http://localhost').pathname;
-  const relative = requestPath === '/' ? 'index.html' : requestPath.replace(/^\/+/, '');
-  if (!(/^(index\.html|assets\/[a-zA-Z0-9._-]+)$/).test(relative)) {
-    res.statusCode = 404;
-    return res.end('Não encontrado');
-  }
+  const requestPath = new URL(req.url || '/', 'http://localhost').pathname;
+  // A Vercel pode encaminhar o root a esta função com um prefixo interno.
+  // A interface é uma SPA estática: todo caminho não relacionado a assets
+  // deve receber o index.html.
+  const relative = requestPath.startsWith('/assets/')
+    ? requestPath.replace(/^\/+/, '')
+    : 'index.html';
   const file = path.join(__dirname, relative);
   try {
     res.setHeader('Content-Type', mime[path.extname(file)] || 'application/octet-stream');
