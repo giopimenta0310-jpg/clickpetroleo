@@ -1,8 +1,0 @@
-{
-  "name": "cpg-gerador-de-criativos",
-  "private": true,
-  "scripts": {
-    "start": "node local-server.js",
-    "build": "node build.js"
-  }
-}
